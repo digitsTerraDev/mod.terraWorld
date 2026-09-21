@@ -1,6 +1,6 @@
 package com.terraskills.toroidalcompat.client;
 
-import com.toroidalworld.api.ToroidalShape;
+import com.toroidalworld.api.v1.ToroidalShape;
 import net.minecraft.core.Direction;
 
 /** Converts folded world coordinates into the torus angles shown to players. */

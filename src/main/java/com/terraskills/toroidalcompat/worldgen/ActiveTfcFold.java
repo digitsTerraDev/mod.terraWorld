@@ -1,7 +1,7 @@
 package com.terraskills.toroidalcompat.worldgen;
 
 import com.toroidalworld.core.WorldFold;
-import com.toroidalworld.noise.GenerationTransformerContext;
+import com.toroidalworld.engine.noise.GenerationTransformerContext;
 
 /** Makes the immutable overworld fold visible to TFC's background workers. */
 public final class ActiveTfcFold {

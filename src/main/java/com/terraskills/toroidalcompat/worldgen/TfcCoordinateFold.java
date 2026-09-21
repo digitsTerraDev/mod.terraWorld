@@ -1,7 +1,7 @@
 package com.terraskills.toroidalcompat.worldgen;
 
 import com.toroidalworld.core.WorldFold;
-import com.toroidalworld.noise.GenerationTransformerContext;
+import com.toroidalworld.engine.noise.GenerationTransformerContext;
 import net.minecraft.core.Direction;
 import net.minecraft.core.QuartPos;
 

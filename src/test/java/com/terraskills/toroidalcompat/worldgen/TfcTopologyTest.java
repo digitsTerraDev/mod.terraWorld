@@ -2,8 +2,8 @@ package com.terraskills.toroidalcompat.worldgen;
 
 import com.toroidalworld.core.WorldFold;
 import com.toroidalworld.core.WorldFolds;
-import com.toroidalworld.options.WorldLoopBounds;
-import com.toroidalworld.shape.FlatShape;
+import com.toroidalworld.core.WorldLoopBounds;
+import com.toroidalworld.core.FlatShape;
 import net.dries007.tfc.world.region.Units;
 import net.minecraft.core.Direction;
 import org.junit.jupiter.api.AfterEach;

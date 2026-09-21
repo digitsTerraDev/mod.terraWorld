@@ -22,6 +22,7 @@
     "RegionGeneratorMixin",
     "RiverEdgeMixin",
     "ShapedDimensionsMixin",
+    "ShapedDimensionsEligibilityMixin",
     "ShoreAndOceanSurfaceBuilderMixin",
     "ShoreSurfaceStateMixin",
     "SolarCalculatorMixin",

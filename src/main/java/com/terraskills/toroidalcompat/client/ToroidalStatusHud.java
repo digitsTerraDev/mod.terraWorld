@@ -1,8 +1,8 @@
 package com.terraskills.toroidalcompat.client;
 
 import com.terraskills.toroidalcompat.config.ToroidalCompatClientConfig;
-import com.toroidalworld.api.ToroidalShape;
-import com.toroidalworld.api.ToroidalWorldApi;
+import com.toroidalworld.api.v1.ToroidalShape;
+import com.toroidalworld.api.v1.ToroidalWorldApi;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;

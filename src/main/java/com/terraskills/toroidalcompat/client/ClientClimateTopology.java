@@ -1,7 +1,7 @@
 package com.terraskills.toroidalcompat.client;
 
-import com.toroidalworld.api.ToroidalShape;
-import com.toroidalworld.api.ToroidalWorldApi;
+import com.toroidalworld.api.v1.ToroidalShape;
+import com.toroidalworld.api.v1.ToroidalWorldApi;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;

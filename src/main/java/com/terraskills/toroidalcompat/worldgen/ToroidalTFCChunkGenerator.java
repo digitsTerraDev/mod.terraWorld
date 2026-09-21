@@ -3,10 +3,9 @@ package com.terraskills.toroidalcompat.worldgen;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.terraskills.toroidalcompat.mixin.TFCChunkGeneratorAccessor;
-import com.toroidalworld.core.WorldFold;
-import com.toroidalworld.core.WorldFolds;
-import com.toroidalworld.gen.ShapedChunkGenerator;
-import com.toroidalworld.shape.FlatShape;
+import com.toroidalworld.core.CarriedShape;
+import com.toroidalworld.core.FlatShape;
+import com.toroidalworld.core.ShapedChunkGenerator;
 import net.dries007.tfc.world.TFCChunkGenerator;
 import net.dries007.tfc.world.biome.BiomeSourceExtension;
 import net.minecraft.core.Holder;
@@ -15,35 +14,33 @@ import net.minecraft.world.level.levelgen.NoiseGeneratorSettings;
 public final class ToroidalTFCChunkGenerator extends TFCChunkGenerator implements ShapedChunkGenerator {
     public static final MapCodec<ToroidalTFCChunkGenerator> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             TFCChunkGenerator.CODEC.forGetter(ToroidalTFCChunkGenerator::unshaped),
-            ShapedChunkGenerator.SHAPE_CODEC.fieldOf("toroidal_shape").forGetter(ToroidalTFCChunkGenerator::shape)
+            ShapedChunkGenerator.CARRIED_CODEC.forGetter(ToroidalTFCChunkGenerator::carriedShape)
     ).apply(instance, ToroidalTFCChunkGenerator::new));
 
-    private final FlatShape shape;
-    private final WorldFold transformer;
+    private final CarriedShape carriedShape;
 
-    public ToroidalTFCChunkGenerator(TFCChunkGenerator source, FlatShape shape) {
-        this((BiomeSourceExtension) source.getBiomeSource(), noiseSettings(source), source.settings(), shape);
+    public ToroidalTFCChunkGenerator(TFCChunkGenerator source, CarriedShape carriedShape) {
+        this((BiomeSourceExtension) source.getBiomeSource(), noiseSettings(source), source.settings(), carriedShape);
     }
 
     private ToroidalTFCChunkGenerator(
             BiomeSourceExtension biomeSource,
             Holder<NoiseGeneratorSettings> noiseSettings,
             net.dries007.tfc.world.settings.Settings settings,
-            FlatShape shape) {
+            CarriedShape carriedShape) {
         super(biomeSource, noiseSettings, settings);
-        this.shape = shape;
-        this.transformer = WorldFolds.of(shape);
-        ActiveTfcFold.set(this.transformer);
+        this.carriedShape = carriedShape;
+        ActiveTfcFold.set(carriedShape.fold());
     }
 
     @Override
-    public FlatShape shape() {
-        return shape;
+    public CarriedShape carriedShape() {
+        return carriedShape;
     }
 
     @Override
-    public WorldFold transformer() {
-        return transformer;
+    public TFCChunkGenerator unshaped() {
+        return new TFCChunkGenerator((BiomeSourceExtension) getBiomeSource(), noiseSettings(this), settings());
     }
 
     public TFCChunkGenerator copyToroidal() {
@@ -51,7 +48,7 @@ public final class ToroidalTFCChunkGenerator extends TFCChunkGenerator implement
                 ((BiomeSourceExtension) getBiomeSource()).copy(),
                 noiseSettings(this),
                 settings(),
-                shape
+                carriedShape
         );
     }
 
@@ -62,10 +59,6 @@ public final class ToroidalTFCChunkGenerator extends TFCChunkGenerator implement
         // The registry still needs the concrete subtype codec so saved worlds decode
         // back into this shaped generator; MapCodec is invariant, hence this bridge.
         return (MapCodec) CODEC;
-    }
-
-    private TFCChunkGenerator unshaped() {
-        return new TFCChunkGenerator((BiomeSourceExtension) getBiomeSource(), noiseSettings(this), settings());
     }
 
     private static Holder<NoiseGeneratorSettings> noiseSettings(TFCChunkGenerator generator) {

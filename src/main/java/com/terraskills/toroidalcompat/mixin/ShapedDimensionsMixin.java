@@ -2,8 +2,8 @@ package com.terraskills.toroidalcompat.mixin;
 
 import com.mojang.logging.LogUtils;
 import com.terraskills.toroidalcompat.worldgen.ToroidalTFCChunkGenerator;
-import com.toroidalworld.gen.ShapedDimensions;
-import com.toroidalworld.shape.FlatShape;
+import com.toroidalworld.core.CarriedShape;
+import com.toroidalworld.engine.gen.ShapedDimensions;
 import net.dries007.tfc.world.TFCChunkGenerator;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.dimension.LevelStem;
@@ -25,7 +25,7 @@ public abstract class ShapedDimensionsMixin {
     private static void tfcToroidal$wrapTFCGenerator(
             WorldDimensions dimensions,
             ResourceKey<LevelStem> key,
-            FlatShape shape,
+            CarriedShape carriedShape,
             CallbackInfoReturnable<WorldDimensions> cir) {
         final LevelStem stem = dimensions.get(key).orElse(null);
         if (stem == null || !(stem.generator() instanceof TFCChunkGenerator tfc)
@@ -34,7 +34,7 @@ public abstract class ShapedDimensionsMixin {
         }
 
         final Map<ResourceKey<LevelStem>, LevelStem> stems = new HashMap<>(dimensions.dimensions());
-        stems.put(key, new LevelStem(stem.type(), new ToroidalTFCChunkGenerator(tfc, shape)));
+        stems.put(key, new LevelStem(stem.type(), new ToroidalTFCChunkGenerator(tfc, carriedShape)));
         TFC_TOROIDAL_LOGGER.info("Applied Toroidal World shape to TFC dimension {}", key.location());
         cir.setReturnValue(new WorldDimensions(stems));
     }
