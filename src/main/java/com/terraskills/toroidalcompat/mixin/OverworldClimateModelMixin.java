@@ -7,12 +7,15 @@ import com.terraskills.toroidalcompat.worldgen.TfcTopology;
 import net.dries007.tfc.util.climate.OverworldClimateModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.level.LevelReader;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(value = OverworldClimateModel.class, remap = false)
 public abstract class OverworldClimateModelMixin {
@@ -37,22 +40,20 @@ public abstract class OverworldClimateModelMixin {
                 TfcCoordinateFold.block(pos.getZ(), Direction.Axis.Z));
     }
 
-    @ModifyVariable(method = "calculateMonthlyTemperature", at = @At("HEAD"), argsOnly = true, ordinal = 0)
-    private int tfcToroidal$offsetMonthlyLatitude(int z) {
-        return z + TfcTopology.climateZOffsetBlocks(Math.round(temperatureScale));
-    }
-
-    @Redirect(
-            method = "calculateMonthlyTemperature",
-            at = @At(value = "FIELD", target = "Lnet/dries007/tfc/util/climate/OverworldClimateModel;temperatureScale:F"))
-    private float tfcToroidal$effectiveMonthlyScale(OverworldClimateModel instance) {
-        return instance.hemisphereScale();
-    }
-
     @ModifyExpressionValue(
-            method = "calculateMonthlyTemperature",
-            at = @At(value = "INVOKE", target = "Lnet/dries007/tfc/util/Helpers;triangle(FFFF)F"))
-    private float tfcToroidal$mirrorMonthlyLatitude(float factor) {
-        return TfcTopology.mirrorsSouthernHemisphere() ? Math.abs(factor) : factor;
+            method = "getInstantTemperature",
+            at = @At(value = "INVOKE", target = "Lnet/dries007/tfc/util/calendar/Month;getTemperatureModifier()F"))
+    private float tfcToroidal$reverseSouthernSeason(
+            float modifier, LevelReader level, BlockPos pos, long calendarTick, int daysInMonth) {
+        return TfcTopology.isNorthernHemisphere(pos.getZ()) ? modifier : -modifier;
+    }
+
+    @Inject(method = "calculateMonthlyTemperature", at = @At("HEAD"), cancellable = true)
+    private void tfcToroidal$twoPoleMonthlyTemperature(
+            int z, float monthTemperatureModifier, CallbackInfoReturnable<Float> cir) {
+        final float polarFactor = TfcTopology.polarClimateFactor(z);
+        if (!Float.isNaN(polarFactor)) {
+            cir.setReturnValue(-18f * polarFactor * monthTemperatureModifier);
+        }
     }
 }

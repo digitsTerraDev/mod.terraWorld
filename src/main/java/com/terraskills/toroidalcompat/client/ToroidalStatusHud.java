@@ -41,17 +41,20 @@ public final class ToroidalStatusHud {
         final ToroidalShape shape = optionalShape.orElseThrow();
         final double latitude = ToroidalAngles.latitude(shape, minecraft.player.getZ());
         final double longitude = ToroidalAngles.longitude(shape, minecraft.player.getX());
-        graphics.drawString(minecraft.font, "Latitude   " + signedAngle(latitude),
+        graphics.drawString(minecraft.font, "Latitude   " + latitudeAngle(latitude,
+                        ToroidalAngles.latitudeBranch(shape, minecraft.player.getZ())),
                 6, 17, 0xFFE7E7E7, true);
         graphics.drawString(minecraft.font, "Longitude  " + unsignedAngle(longitude),
                 6, 29, 0xFFE7E7E7, true);
         graphics.pose().popPose();
     }
 
-    private static String signedAngle(double value) {
-        return Math.abs(value) < 0.005
-                ? "0.00\u00B0"
-                : String.format(Locale.ROOT, "%+.2f\u00B0", value);
+    private static String latitudeAngle(double value, char branch) {
+        if (branch == '\0') {
+            return String.format(Locale.ROOT, "%+.2f\u00B0", value);
+        }
+        final double magnitude = Math.abs(value) < 0.005 ? 0.0 : Math.abs(value);
+        return String.format(Locale.ROOT, "%c%.2f\u00B0 %s", branch, magnitude, value >= 0 ? "N" : "S");
     }
 
     private static String unsignedAngle(double value) {

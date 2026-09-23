@@ -56,9 +56,7 @@ public abstract class RegionGeneratorMixin implements RegionGeneratorBridge {
     private static Noise2D tfcToroidal$alignTemperaturePole(
             Noise2D original, boolean axisIsX, float scale, float constant) {
         if (axisIsX || !TfcTopology.mirrorsSouthernHemisphere()) return original;
-        final double offset = TfcTopology.climateZOffsetBlocks(Math.round(scale))
-                / (double) Units.GRID_WIDTH_IN_BLOCK;
-        return (x, z) -> original.noise(x, z + offset);
+        return (x, z) -> TfcTopology.polarClimateNoiseGrid(z);
     }
 
     @Inject(method = "<init>", at = @At("RETURN"))
@@ -115,8 +113,13 @@ public abstract class RegionGeneratorMixin implements RegionGeneratorBridge {
 
     @Override
     public Region.Point tfcToroidal$getOrCreateRegionPointUnwrapped(int gridX, int gridZ) {
-        return ((RegionAccessor) (Object) getOrCreateRegion(cellNoise.cell(gridX, gridZ)))
-                .tfcToroidal$atOrThrow(gridX, gridZ);
+        // Periodic interpolation samples a second copy of a point across the
+        // seam. TFC's Region stores only its canonical 4x4 grid coordinates,
+        // so fold that copy before indexing its fixed-size point array.
+        final int foldedX = TfcCoordinateFold.grid(gridX, Direction.Axis.X);
+        final int foldedZ = TfcCoordinateFold.grid(gridZ, Direction.Axis.Z);
+        return ((RegionAccessor) (Object) getOrCreateRegion(cellNoise.cell(foldedX, foldedZ)))
+                .tfcToroidal$atOrThrow(foldedX, foldedZ);
     }
 
     private static Noise2D periodic(Noise2D source) {

@@ -50,12 +50,26 @@ class TfcTopologyTest {
     }
 
     @Test
-    void climateScaleAndPoleOffsetFitTheWrappedCircumference() {
+    void climateScaleAndTwoPoleLatitudeFitTheWrappedCircumference() {
         final var domain = fold.blockDomain(Direction.Axis.Z);
         final int scale = TfcTopology.climateScaleBlocks(Direction.Axis.Z, 20_000);
 
         assertEquals(domain.domainLength / 2, scale);
-        assertEquals(-scale / 2 - domain.lowerBound, TfcTopology.climateZOffsetBlocks(20_000));
-        assertTrue(TfcTopology.mirrorsSouthernHemisphere());
+        assertEquals((float) (Math.PI / 2d), TfcTopology.latitudeRadians(domain.lowerBound), 1e-6f);
+        assertEquals((float) (Math.PI / 4d), TfcTopology.latitudeRadians(domain.lowerBound + domain.domainLength / 8), 1e-6f);
+        assertEquals(0f, TfcTopology.latitudeRadians(domain.lowerBound + domain.domainLength / 4), 1e-6f);
+        assertEquals((float) (-Math.PI / 2d), TfcTopology.latitudeRadians(domain.lowerBound + domain.domainLength / 2), 1e-6f);
+        assertEquals(0f, TfcTopology.latitudeRadians(domain.lowerBound + 3 * domain.domainLength / 4), 1e-6f);
+        assertTrue(TfcTopology.isNorthernHemisphere(domain.lowerBound));
+        assertTrue(!TfcTopology.isNorthernHemisphere(domain.lowerBound + domain.domainLength / 2));
+        assertEquals(1f, TfcTopology.polarClimateFactor(domain.lowerBound), 1e-6f);
+        assertEquals(0f, TfcTopology.polarClimateFactor(domain.lowerBound + domain.domainLength / 4), 1e-6f);
+
+        final double minGrid = domain.lowerBound / (double) Units.GRID_WIDTH_IN_BLOCK;
+        final double gridSize = domain.domainLength / (double) Units.GRID_WIDTH_IN_BLOCK;
+        assertEquals(-1d, TfcTopology.polarClimateNoiseGrid(minGrid), 1e-12);
+        assertEquals(1d, TfcTopology.polarClimateNoiseGrid(minGrid + gridSize / 4d), 1e-12);
+        assertEquals(-1d, TfcTopology.polarClimateNoiseGrid(minGrid + gridSize / 2d), 1e-12);
+        assertEquals(1d, TfcTopology.polarClimateNoiseGrid(minGrid + 3d * gridSize / 4d), 1e-12);
     }
 }

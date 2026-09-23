@@ -82,6 +82,36 @@ public final class TfcTopology {
         return loops(Direction.Axis.Z);
     }
 
+    /**
+     * Maps a looped Z axis onto a climate globe. The seam and opposite side are
+     * the north and south pole lines; quarter turns are the equators.
+     */
+    public static float latitudeRadians(int z) {
+        final WorldFold fold = ActiveTfcFold.get();
+        if (fold == null || !fold.bounds().loops(Direction.Axis.Z)) return Float.NaN;
+        final WrapDomain domain = fold.blockDomain(Direction.Axis.Z);
+        final double fraction = (z - domain.lowerBound) / (double) domain.domainLength;
+        return latitudeRadians(fraction);
+    }
+
+    public static boolean isNorthernHemisphere(int z) {
+        final float latitude = latitudeRadians(z);
+        return Float.isNaN(latitude) || latitude >= 0f;
+    }
+
+    public static float polarClimateFactor(int z) {
+        final float latitude = latitudeRadians(z);
+        return Float.isNaN(latitude) ? Float.NaN : Math.abs(latitude) / ((float) Math.PI / 2f);
+    }
+
+    /** Returns TFC's -1 (pole) to +1 (equator) temperature-noise baseline. */
+    public static double polarClimateNoiseGrid(double z) {
+        final Domain domain = gridDomain(Direction.Axis.Z);
+        if (domain == null) return Double.NaN;
+        final float latitude = latitudeRadians((z - domain.min) / domain.size);
+        return 1d - 2d * Math.abs(latitude / ((float) Math.PI / 2f));
+    }
+
     public static int minChunk(Direction.Axis axis) {
         final WorldFold fold = ActiveTfcFold.get();
         return fold == null ? 0 : Math.floorDiv(fold.blockDomain(axis).lowerBound, 16);
@@ -118,6 +148,11 @@ public final class TfcTopology {
 
     private static double wrap(double value, double min, double size) {
         return min + (value - min - Math.floor((value - min) / size) * size);
+    }
+
+    private static float latitudeRadians(double fraction) {
+        final double turn = fraction - Math.floor(fraction);
+        return (float) ((turn <= 0.5d ? 1d - 4d * turn : 4d * turn - 3d) * (Math.PI / 2d));
     }
 
     private static double lerp(double t, double a, double b) {
