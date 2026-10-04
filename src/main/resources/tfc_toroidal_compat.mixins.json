@@ -31,7 +31,11 @@
   ],
   "client": [
     "ChunkWatchPacketMixin",
-    "TFCColorsMixin"
+    "TFCColorsMixin",
+    "WorldPreviewTfcPreviewContainerMixin",
+    "WorldPreviewTfcPreviewDisplayMixin",
+    "WorldPreviewTfcSampleUtilsMixin",
+    "WorldPreviewTfcPreviewTabMixin"
   ],
   "injectors": {
     "defaultRequire": 1

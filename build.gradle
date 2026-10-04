@@ -84,6 +84,7 @@ dependencies {
     localRuntime "maven.modrinth:tfc-mantle-mountains:${tfc_mantle_mountains_version}"
     localRuntime "vazkii.patchouli:Patchouli:${patchouli_version}"
     localRuntime "maven.modrinth:journeymap:${journeymap_version}"
+    localRuntime "maven.modrinth:LEqrn5wh:${world_preview_tfc_version}"
 
     testImplementation platform('org.junit:junit-bom:5.11.4')
     testImplementation 'org.junit.jupiter:junit-jupiter'

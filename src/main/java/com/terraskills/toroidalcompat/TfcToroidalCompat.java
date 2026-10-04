@@ -10,8 +10,12 @@ import com.terraskills.toroidalcompat.worldgen.ActiveTfcFold;
 import com.toroidalworld.api.v1.ToroidalShape;
 import com.toroidalworld.api.v1.ToroidalWorldApi;
 import net.minecraft.core.Direction;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.bus.api.IEventBus;
@@ -24,6 +28,7 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
+import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import org.slf4j.Logger;
 
 import java.util.Optional;
@@ -32,6 +37,8 @@ import java.util.Optional;
 public final class TfcToroidalCompat {
     public static final String MOD_ID = "tfc_toroidal_compat";
     private static final Logger LOGGER = LogUtils.getLogger();
+    private static final TagKey<EntityType<?>> TFC_SMALL_FISH = TagKey.create(Registries.ENTITY_TYPE,
+            ResourceLocation.fromNamespaceAndPath("tfc", "small_fish"));
     private static final DeferredRegister<MapCodec<? extends ChunkGenerator>> CHUNK_GENERATORS =
             DeferredRegister.create(Registries.CHUNK_GENERATOR, MOD_ID);
 
@@ -76,6 +83,15 @@ public final class TfcToroidalCompat {
     @SubscribeEvent
     public void onServerStopped(ServerStoppedEvent event) {
         ActiveTfcFold.clear();
+    }
+
+    /** Prevents TFC's schoolable fish from being added while preserving fish already saved in the world. */
+    @SubscribeEvent
+    public void onEntityJoinLevel(EntityJoinLevelEvent event) {
+        final Level level = event.getLevel();
+        if (!level.isClientSide() && !event.loadedFromDisk() && event.getEntity().getType().is(TFC_SMALL_FISH)) {
+            event.setCanceled(true);
+        }
     }
 
     private static String describe(ToroidalShape shape, Direction.Axis axis) {
