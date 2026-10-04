@@ -1,7 +1,10 @@
 package com.terraskills.toroidalcompat.mixin;
 
+import java.util.Map;
+
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -14,16 +17,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Pseudo
 @Mixin(targets = "com.alessandro.astages.engine.ASimpleRestrictionManager", remap = false)
 public abstract class AStagesPreviewReloadMixin {
+    @Shadow
+    private static Map<?, ?> RESTRICTION_CACHE;
+
     @Inject(method = "onReloadStarted", at = @At("HEAD"), cancellable = true, require = 0)
-    private void terraWorld$skipUninitialisedPreviewReload(final CallbackInfo callback) {
-        try {
-            final var cache = getClass().getDeclaredField("RESTRICTION_CACHE");
-            cache.setAccessible(true);
-            if (cache.get(null) == null) {
-                callback.cancel();
-            }
-        } catch (final ReflectiveOperationException ignored) {
-            // AStages changed or is absent: leave its normal callback intact.
+    private static void terraWorld$skipUninitialisedPreviewReload(final CallbackInfo callback) {
+        if (RESTRICTION_CACHE == null) {
+            callback.cancel();
         }
     }
 }
