@@ -5,6 +5,7 @@ import com.terraskills.toroidalcompat.worldgen.TfcCoordinateFold;
 import com.terraskills.toroidalcompat.worldgen.TfcTopology;
 import com.terraskills.toroidalcompat.worldgen.RegionGeneratorBridge;
 import net.dries007.tfc.world.Seed;
+import net.dries007.tfc.world.FastConcurrentCache;
 import net.dries007.tfc.world.noise.Cellular2D;
 import net.dries007.tfc.world.noise.Noise2D;
 import net.dries007.tfc.world.region.Region;
@@ -21,10 +22,15 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+
+import java.util.function.BiConsumer;
 
 @Mixin(value = RegionGenerator.class, remap = false)
 public abstract class RegionGeneratorMixin implements RegionGeneratorBridge {
     @Shadow @Final public Cellular2D cellNoise;
+    @Shadow @Final private FastConcurrentCache<Region> cellCache;
+    @Shadow @Final private Seed seed;
     @Shadow @Final @Mutable public Noise2D continentNoise;
     @Shadow @Final @Mutable public Noise2D temperatureNoise;
     @Shadow @Final @Mutable public Noise2D oceanicInfluenceNoise;
@@ -36,6 +42,33 @@ public abstract class RegionGeneratorMixin implements RegionGeneratorBridge {
     @Shadow
     private Region getOrCreateRegion(Cellular2D.Cell cell) {
         throw new AssertionError();
+    }
+
+    /**
+     * Mantle Mountains can look up the opposite-side region while a region task
+     * is running. Publish the allocated region before its task pipeline begins
+     * so that a seam lookup finds the in-flight object instead of recursing.
+     */
+    @Inject(method = "getOrCreateRegion(Lnet/dries007/tfc/world/noise/Cellular2D$Cell;)Lnet/dries007/tfc/world/region/Region;",
+            at = @At("HEAD"), cancellable = true)
+    private void tfcToroidal$cacheRegionBeforeMantleSeamTasks(
+            Cellular2D.Cell cell, CallbackInfoReturnable<Region> callback) {
+        if (!TfcTopology.active() || !net.neoforged.fml.ModList.get().isLoaded("tfcmountains")) return;
+
+        final int keyX = Float.floatToIntBits((float) cell.x());
+        final int keyZ = Float.floatToIntBits((float) cell.y());
+        synchronized (cellCache) {
+            Region region = cellCache.getIfPresent(keyX, keyZ);
+            if (region == null) {
+                final BiConsumer<RegionGenerator.Task, Region> viewer = (task, generated) -> { };
+                final RegionGenerator.Context context = RegionGeneratorContextAccessor.tfcToroidal$create(
+                        (RegionGenerator) (Object) this, viewer, cell, seed);
+                region = context.region;
+                cellCache.set(keyX, keyZ, region);
+                ((RegionGeneratorContextAccessor) (Object) context).tfcToroidal$runTasks();
+            }
+            callback.setReturnValue(region);
+        }
     }
 
     @Redirect(
